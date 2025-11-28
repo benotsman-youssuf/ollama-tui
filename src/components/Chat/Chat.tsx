@@ -5,11 +5,10 @@ import ollama from "ollama";
 
 interface Model {
   name: string;
-  // Add any other properties your model objects have
+  description?: string; // Add any other properties your model objects have
 }
 
 const Chat = () => {
-
   const [messages, setMessages] = useState<
     { sender: "user" | "ai"; content: string }[]
   >([]);
@@ -20,7 +19,7 @@ const Chat = () => {
 
   useKeyboard((key) => {
     if (key.name === "tab") {
-      setFocused(!focused); 
+      setFocused(!focused);
     }
   });
 
@@ -28,8 +27,8 @@ const Chat = () => {
     const fetchModels = async () => {
       try {
         const response = await fetch("http://localhost:11434/api/tags");
-        const data = await response.json()
-        setModelsList(data.models); 
+        const data = await response.json();
+        setModelsList(data.models);
         if (data.models.length > 0) {
           setActiveModel(data.models[0].name);
         }
@@ -42,15 +41,25 @@ const Chat = () => {
   }, []);
 
   const respondToMessage = async (message: string) => {
+    setMessages((prev) => [...prev, { sender: "ai", content: "" }]);
     const response = await ollama.chat({
       model: activeModel,
       messages: [{ role: "user", content: message }],
+      stream: true,
     });
 
-    setMessages((prev) => [
-      ...prev,
-      { sender: "ai", content: response.message.content },
-    ]);
+    for await (const part of response) {
+      setMessages((prev) => {
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage && lastMessage.sender === "ai") {
+          return [
+            ...prev.slice(0, -1),
+            { ...lastMessage, content: lastMessage.content + part.message.content },
+          ];
+        }
+        return prev;
+      });
+    }
   };
 
   const handleSubmit = (text: string) => {
@@ -72,6 +81,7 @@ const Chat = () => {
         width: "100%",
         backgroundColor: "black",
         padding: 1,
+        gap: 1,
         alignItems: "center",
       }}
     >
@@ -79,12 +89,14 @@ const Chat = () => {
       <scrollbox
         style={{
           flexGrow: 1,
-          flexDirection: "column",
-          justifyContent: "flex-end",
-          overflow: "hidden",
+          paddingLeft: 3,
+          paddingRight: 3,
+          paddingTop: 1,
+          paddingBottom: 1,
+
           backgroundColor: "#282a2e",
           width: "80%",
-          padding: 1,
+          maxHeight: "100%",
         }}
       >
         {messages.map((msg, i) => (
@@ -94,30 +106,43 @@ const Chat = () => {
               alignSelf: msg.sender === "user" ? "flex-end" : "flex-start",
               margin: 0.5,
 
-
-              maxWidth:"50%"
+              maxWidth: "50%",
             }}
           >
             {msg.content}
           </text>
         ))}
       </scrollbox>
-
-      <text>{activeModel}</text>
+      <text>Active Model: {activeModel}</text>
 
       {/* Input bar */}
       <box
         style={{
-          flexDirection: "row",
+          flexDirection: "column",
+          width: "80%",
         }}
       >
+        <select
+          style={{ width: "80%", height: 2 , backgroundColor: "black"}}
+          options={modelsList.map((model: Model) => ({
+            name: model.name,
+            description: model.description || "",
+          }))}
+          focused={focused}
+          onChange={(index, option) => {
+            setActiveModel(option?.name || "");
+          }}
+          onSelect={() => {
+            setFocused(!focused);
+          }}
+        />
+
         <box
           style={{
             border: true,
             borderColor: "#282a2e",
             height: 3,
-            width: "70%",
-            marginTop: 1,
+            width: "100%",
           }}
         >
           <input
@@ -127,16 +152,6 @@ const Chat = () => {
             onSubmit={handleSubmit}
           />
         </box>
-        <select
-          style={{ width: "10%" }}
-          options={modelsList.map(model => ({ name: model.name }))}
-          focused={focused}
-          onSelect={(index, option) => {
-            setActiveModel(option?.name || "")
-            setFocused(!focused)
-          }}
-
-        />
       </box>
     </box>
   );

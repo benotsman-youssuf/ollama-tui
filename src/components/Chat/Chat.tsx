@@ -40,11 +40,15 @@ const Chat = () => {
     fetchModels();
   }, []);
 
+  const history = messages.map((msg) => ({content: msg.content }));
+
+
   const respondToMessage = async (message: string) => {
     setMessages((prev) => [...prev, { sender: "ai", content: "" }]);
+    const historyText = messages.map((msg) => `${msg.sender}: ${msg.content}`).join("\n");
     const response = await ollama.chat({
       model: activeModel,
-      messages: [{ role: "user", content: message }],
+      messages: [{ role: "user", content:  `History:\n${historyText}\n\nUser's new message: ${message}`  }],
       stream: true,
     });
 
@@ -93,7 +97,6 @@ const Chat = () => {
           paddingRight: 3,
           paddingTop: 1,
           paddingBottom: 1,
-
           backgroundColor: "#282a2e",
           width: "80%",
           maxHeight: "100%",
@@ -113,7 +116,7 @@ const Chat = () => {
           </text>
         ))}
       </scrollbox>
-      <text>Active Model: {activeModel}</text>
+      <text>Active Model: </text>
 
       {/* Input bar */}
       <box

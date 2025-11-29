@@ -16,6 +16,7 @@
   "dependencies": {
     "@opentui/core": "^0.1.36",
     "@opentui/react": "^0.1.36",
+    "ink": "^6.5.1",
     "marked": "^17.0.1",
     "ollama": "^0.6.3",
     "react": "^19.1.1"

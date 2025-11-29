@@ -2,11 +2,32 @@ import { act, useEffect, useState } from "react";
 import { useKeyboard } from "@opentui/react";
 import ollama from "ollama";
 import { theme } from "../../theme";
+import InputBar from "../InputBar/InputBar";
 
 interface Model {
   name: string;
   description?: string; // Add any other properties your model objects have
 }
+
+const ollamaArt = `
+                                                                                                      
+        ██████████        █████  ████                                                               
+      ██████████████      █████  ████                                                               
+    ████████  ████████    █████  ████                                                               
+   █████            ████  █████  ████      ████████     █████ ███████   ██████         ████████     
+  █████              ███  █████  ████    █████████████  █████████████████████████   █████████████   
+  ████               ████ █████  ████   ██████   ██████ ███████  ████████  ██████  ██████   ██████  
+  ████               ████ █████  ████  █████      █████ ██████     ████     █████  ████       ████  
+  ████               ████ █████  ████      ████████████ █████      ████      ████     ████████████  
+  █████              ███  █████  ████   ███████████████ █████      ████      ████  ███████████████  
+  ██████           █████  █████  ████  █████      █████ █████      ████      ████  █████      ████  
+    ████████  ████████    █████  ████  █████    ███████ █████      ████      ████ █████     ██████  
+      ██████████████      █████  ████   ███████████████ █████      ████      ████  ███████████████  
+        ██████████        █████  ████     █████████ ███ █████      ████      ████    ████████ ████  
+                                                                                                    
+
+
+`;
 
 const Chat = () => {
   const [messages, setMessages] = useState<
@@ -17,6 +38,7 @@ const Chat = () => {
   const [focused, setFocused] = useState(false);
   const [activeModel, setActiveModel] = useState("");
   const [loading, setLoading] = useState(false);
+  const [hello, setHello] = useState(true);
 
   useKeyboard((key) => {
     if (key.name === "tab") {
@@ -41,8 +63,6 @@ const Chat = () => {
     fetchModels();
   }, []);
 
-  const history = messages.map((msg) => ({ content: msg.content }));
-
   const respondToMessage = async (message: string) => {
     setLoading(true);
     setMessages((prev) => [...prev, { sender: "ai", content: "" }]);
@@ -59,7 +79,6 @@ const Chat = () => {
       ],
       stream: true,
     });
-
     setLoading(false);
     for await (const part of response) {
       setMessages((prev) => {
@@ -83,10 +102,11 @@ const Chat = () => {
 
     // Add user's message
     setMessages((prev) => [...prev, { sender: "user", content: text }]);
-    setValue("");
+    setValue(" ");
 
     // Ask AI
     respondToMessage(text);
+    setHello(false);
   };
 
   return (
@@ -101,28 +121,27 @@ const Chat = () => {
         alignItems: "center",
       }}
     >
-      <text>Active Model: {activeModel} </text>
-      
-      
       {/* Messages area */}
-      <scrollbox
-        style={{
-          flexGrow: 1,
-          paddingLeft: 3,
-          paddingRight: 3,
-          paddingTop: 1,
-          paddingBottom: 1,
-          backgroundColor: theme.colors.backgroundPanel,
-          width: "80%",
-          maxHeight: "85%",
-        }}
-      >
-        {
-          messages.map((msg, i) => {
+      {hello ? (
+        <text>{ollamaArt}</text>
+      ) : (
+        <scrollbox
+          style={{
+            flexGrow: 1,
+            paddingLeft: 3,
+            paddingRight: 3,
+            paddingTop: 1,
+            paddingBottom: 1,
+            backgroundColor: theme.colors.backgroundPanel,
+            width: "80%",
+            maxHeight: "85%",
+          }}
+        >
+          {messages.map((msg, i) => {
             const isUser = msg.sender === "user";
             const isLastMessage = i === messages.length - 1;
             const showLoading = !isUser && loading && isLastMessage;
-            
+
             return (
               <text
                 key={i}
@@ -132,63 +151,26 @@ const Chat = () => {
                   maxWidth: isUser ? "50%" : "100%",
                 }}
               >
-                {isUser ? '> ' : ''}{showLoading ? "..." : msg.content}
+                {isUser ? "> " : ""}
+                {showLoading ? "..." : msg.content}
               </text>
             );
-          })
-        }
-      </scrollbox>
+          })}
+        </scrollbox>
+      )}
 
-      {/* Input bar */}
-      <box
-        style={{
-          flexDirection: "column",
-          width: "80%",
-        }}
-      >
-        <select
-        
-          style={{
-            width: "100%",
-            height: 2,
-          }}
-          options={modelsList.map((model: Model) => ({
-            name: model.name,
-            description: model.description || "",
-          }))}
-          focused={focused}
-          onChange={(index, option) => {
-            setActiveModel(option?.name || "");
-          }}
-          onSelect={() => {
-            setFocused(!focused);
-          }}
-        />
-        <box
-          style={{
-            alignItems: "center",
-            justifyContent: "center",
-            width: "100%",
-            height: 3,
-            backgroundColor: "#1a1a1a",
-            padding: 1,
-          }}
-        >
-          <input
-            style={{
-              width: "100%",
-              height: 2,
-            }}
-            focused={!focused}
-            value={value}
-            onInput={setValue}
-            onSubmit={handleSubmit}
-          />
-        </box>
-      </box>
+      <InputBar
+        value={value}
+        onInput={setValue}
+        onSubmit={handleSubmit}
+        modelsList={modelsList}
+        activeModel={activeModel}
+        onModelChange={setActiveModel}
+        focused={focused}
+        onFocusChange={setFocused}
+      />
     </box>
   );
 };
 
 export default Chat;
-

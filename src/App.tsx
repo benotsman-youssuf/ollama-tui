@@ -1,6 +1,7 @@
 import { Box, Text } from "@opentui/core";
 import SideBar from "./components/SideBar";
 import Chat from "./components/Chat/Chat";
+import New from "./components/New";
 
 function App() {
   
@@ -15,6 +16,7 @@ function App() {
     >
       <SideBar/>
       <Chat/>
+      
     </box>
   );
 }

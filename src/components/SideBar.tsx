@@ -1,5 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { useState } from "react";
+import { theme } from "../theme";
 
 const SideBar = () => {
   const [sideBarOpen, setSideBarOpen] = useState(false);
@@ -14,7 +15,7 @@ const SideBar = () => {
       style={{
         width: sideBarOpen ? 30 : 0, 
         height: "100%",
-        backgroundColor: "#282a2e",
+        backgroundColor: theme.colors.backgroundPanel,
         alignItems: "center",
         justifyContent: "center",
         
